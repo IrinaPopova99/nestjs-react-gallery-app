@@ -35,6 +35,19 @@ services:
       - 27017-27019:27017-27019
     networks:
       - gallery-network
+  
+  redis:
+    image: redis:6.2-alpine
+    container_name: 'redis'
+    restart: unless-stopped
+    networks:
+      - gallery-network
+    ports:
+      - '6379:6379'
+    # command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel debug
+    volumes: 
+      - redis:/data
 
   backend:
     platform: linux/amd64
@@ -55,6 +68,7 @@ services:
     depends_on:
       - minio
       - mongo
+      - redis
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -72,7 +86,6 @@ services:
     networks:
       - gallery-network
     depends_on:
-      - mongo
       - backend
     volumes:
       - ./frontend:/usr/src/app
@@ -81,6 +94,8 @@ services:
 
 volumes:
   minio-storage:
+  redis: 
+    driver: local
 
 networks:
   gallery-network:

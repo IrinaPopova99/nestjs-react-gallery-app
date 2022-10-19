@@ -36,7 +36,7 @@ import { ImageProcessor } from './app.processor';
     }),
     BullModule.registerQueue({
       name: 'image',
-    })
+    }),
   ],
   controllers: [AppController],
   providers: [AppService, CloudService, ImageProcessor],

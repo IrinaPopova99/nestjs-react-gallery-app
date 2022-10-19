@@ -2,14 +2,13 @@ import { InjectQueue } from '@nestjs/bull';
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AppService } from './app.service';
-import { Queue } from 'bull'
-import { log } from 'console';
+import { Queue } from 'bull';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    @InjectQueue('image') private readonly testQueue: Queue
+    @InjectQueue('image') private readonly testQueue: Queue,
   ) {}
 
   @Get()
@@ -22,7 +21,7 @@ export class AppController {
     console.log('test queue');
 
     const job = await this.testQueue.add('optimize', {
-      ping: 3
+      ping: 3,
     });
 
     console.log('job added');
@@ -34,19 +33,21 @@ export class AppController {
     // if (!job) {
     //   return response.sendStatus(404);
     // }
- 
-    const isCompleted = await job.isCompleted();
- 
+
+    // const isCompleted = await job.isCompleted();
+
     // if (!isCompleted) {
     //   return response.sendStatus(202);
     // }
 
-    const result = job.returnvalue;
+    const result = job.finished();
 
-    console.log({isCompleted, result});
+    const data = await result;
+
+    console.log({ data });
 
     return {
-      res: result
+      res: data,
     };
   }
 }

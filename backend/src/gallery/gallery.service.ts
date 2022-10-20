@@ -7,6 +7,8 @@ import sharp from 'sharp';
 import { UploadedFile, UploadedFileDocument } from './schemas/file.schema';
 import { CloudService } from '../cloud/cloud.service';
 import { UploadedDto } from 'src/cloud/dto/uploaded.dto';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class GalleryService {
@@ -15,6 +17,7 @@ export class GalleryService {
     private cloudService: CloudService,
     @InjectModel(UploadedFile.name)
     private uploadedFileModel: Model<UploadedFileDocument>,
+    @InjectQueue('image') private readonly imageQueue: Queue,
   ) {}
 
   private generateHashedFilename(originalFilename: string): {
@@ -42,25 +45,25 @@ export class GalleryService {
     return true;
   }
 
-  private generateThumbnail = async (
-    input,
-    maxDimension = { width: 640, height: 480 },
-    square = false,
-  ) => {
-    const transform = sharp()
-      .resize({
-        width: maxDimension.width,
-        height: square ? maxDimension.width : maxDimension.height,
-        fit: square ? 'cover' : 'inside',
-      })
-      .sharpen()
-      .webp({ quality: 80 })
-      .on('info', (info) => {
-        console.log({ info });
-      });
+  // private generateThumbnail = async (
+  //   input,
+  //   maxDimension = { width: 640, height: 480 },
+  //   square = false,
+  // ) => {
+  //   const transform = sharp()
+  //     .resize({
+  //       width: maxDimension.width,
+  //       height: square ? maxDimension.width : maxDimension.height,
+  //       fit: square ? 'cover' : 'inside',
+  //     })
+  //     .sharpen()
+  //     .webp({ quality: 80 })
+  //     .on('info', (info) => {
+  //       console.log({ info });
+  //     });
 
-    return input.pipe(transform);
-  };
+  //   return input.pipe(transform);
+  // };
 
   async uploadFile(file: UploadedDto) {
     if (!this.checkFileType(file)) {
@@ -76,61 +79,73 @@ export class GalleryService {
     const imageType = file.mimetype.match(/^image\/(.*)/)[1];
     // console.log(imageType);
 
-    console.log(file);
+    // console.log(file);
+
+    // const thumbFile: UploadedDto = {
+    //   ...file,
+    //   hashedname: hashedFilename.filename + '-thumbnail.webp',
+    //   buffer: null,
+    // };
+
+    const thumbGenJob = await this.imageQueue.add('thumbnail', file);
+    const thumbnailBuf = await thumbGenJob.finished();
 
     const thumbFile: UploadedDto = {
       ...file,
       hashedname: hashedFilename.filename + '-thumbnail.webp',
-      buffer: null,
+      buffer: Buffer.from(thumbnailBuf),
     };
+    console.log(thumbFile);
 
     //generate thumbnail
-    try {
-      thumbFile.buffer = await sharp(file.buffer)
-        .resize(200, 200)
-        .sharpen()
-        .webp({ quality: 80 })
-        .toBuffer();
-    } catch (err) {
-      console.log(err);
-    }
+    // try {
+    //   thumbFile.buffer = await sharp(file.buffer)
+    //     .resize(200, 200)
+    //     .sharpen()
+    //     .webp({ quality: 80 })
+    //     .toBuffer();
+    // } catch (err) {
+    //   console.log(err);
+    // }
 
-    // promises.push(this.cloudService.uploadFile(thumbFile));
-    // promises.push(
-    //   this.cloudService.uploadFile({
-    //     ...file,
-    //     hashedname: hashedFilename.filename + hashedFilename.extension,
-    //   }),
-    // );
+    // console.log({ thumbFile });
 
-    // return Promise.all(promises).then((values) => {
-    // console.log(values);
+    promises.push(this.cloudService.uploadFile(thumbFile));
+    promises.push(
+      this.cloudService.uploadFile({
+        ...file,
+        hashedname: hashedFilename.filename + hashedFilename.extension,
+      }),
+    );
 
-    // push all info to db
-    const imageData = {
-      id: hashedFilename.filename,
-      original: {
-        name: file.originalname,
-        mimeType: file.mimetype,
-      },
-      thumbnail: {
-        path: '',
-        key: '',
-        bucket: '',
-      },
-      image: {
-        bucket: '',
-        key: '',
-        path: '',
-      },
-    };
+    return Promise.all(promises).then((values) => {
+      console.log(values);
 
-    const record = new this.uploadedFileModel({
-      ...imageData,
+      // push all info to db
+      const imageData = {
+        id: hashedFilename.filename,
+        original: {
+          name: file.originalname,
+          mimeType: file.mimetype,
+        },
+        thumbnail: {
+          path: '',
+          key: '',
+          bucket: '',
+        },
+        image: {
+          bucket: '',
+          key: '',
+          path: '',
+        },
+      };
+
+      const record = new this.uploadedFileModel({
+        ...imageData,
+      });
+      // record.save();
+
+      return imageData;
     });
-    record.save();
-
-    return imageData;
-    // });
   }
 }

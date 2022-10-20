@@ -8,6 +8,8 @@ export class CloudService {
   constructor(private readonly configService: ConfigService) {}
 
   uploadFile(file: UploadedDto) {
+    // console.log({ file });
+
     const s3 = new S3({
       accessKeyId: this.configService.get('MINIO_ACCESS_KEY'),
       secretAccessKey: this.configService.get('MINIO_SECRET_KEY'),

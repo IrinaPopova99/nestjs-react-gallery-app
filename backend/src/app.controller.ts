@@ -1,14 +1,12 @@
 import { InjectQueue } from '@nestjs/bull';
-import { Controller, Get, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Queue } from 'bull';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
-    @InjectQueue('image') private readonly testQueue: Queue,
+    private readonly appService: AppService, // @InjectQueue('image') private readonly testQueue: Queue,
   ) {}
 
   @Get()
@@ -16,38 +14,24 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get('/queue')
-  async getQueue() {
-    console.log('test queue');
+  // @Get('/queue')
+  // async getQueue() {
+  //   console.log('test queue');
 
-    const job = await this.testQueue.add('optimize', {
-      ping: 3,
-    });
+  //   const job = await this.testQueue.add('optimize', {
+  //     ping: 3,
+  //   });
 
-    console.log('job added');
+  //   console.log('job added');
 
-    // return {
-    //   jobId: job.id
-    // }
+  //   const result = job.finished();
 
-    // if (!job) {
-    //   return response.sendStatus(404);
-    // }
+  //   const data = await result;
 
-    // const isCompleted = await job.isCompleted();
+  //   console.log({ data });
 
-    // if (!isCompleted) {
-    //   return response.sendStatus(202);
-    // }
-
-    const result = job.finished();
-
-    const data = await result;
-
-    console.log({ data });
-
-    return {
-      res: data,
-    };
-  }
+  //   return {
+  //     res: data,
+  //   };
+  // }
 }

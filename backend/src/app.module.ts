@@ -7,7 +7,7 @@ import { envSchema } from './constants/env.schema';
 import { UserModule } from './gallery/gallery.module';
 import { CloudService } from './cloud/cloud.service';
 import { BullModule } from '@nestjs/bull';
-import { ImageProcessor } from './app.processor';
+import { AppProcessor } from './app.processor';
 
 @Module({
   imports: [
@@ -34,11 +34,12 @@ import { ImageProcessor } from './app.processor';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: 'image',
-    }),
+    // BullModule.registerQueue({
+    //   name: 'image',
+    // }),
   ],
   controllers: [AppController],
-  providers: [AppService, CloudService, ImageProcessor],
+  // providers: [AppService, CloudService, AppProcessor],
+  providers: [AppService, CloudService],
 })
 export class AppModule {}

@@ -7,7 +7,7 @@ import {
 import { Job } from 'bull';
 
 @Processor('image')
-export class ImageProcessor {
+export class AppProcessor {
   @OnQueueActive()
   onActive(job: Job) {
     console.log(

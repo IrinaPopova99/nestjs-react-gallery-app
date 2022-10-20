@@ -47,12 +47,12 @@ services:
     # command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     command: redis-server --save 20 1 --loglevel debug
     volumes: 
-      - redis:/data
+      - ./redis:/data
 
   backend:
     platform: linux/amd64
     image: gallery-server
-    container_name: gallery-backend
+    container_name: backend
     build:
       target: development # development or production
       context: ./backend
@@ -76,7 +76,7 @@ services:
 
   frontend:
     image: gallery-client
-    container_name: gallery-frontend
+    container_name: frontend
     build: 
       context: ./frontend
       dockerfile: ./Dockerfile
